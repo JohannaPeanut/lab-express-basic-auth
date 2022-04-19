@@ -4,9 +4,12 @@ const path = require('path');
 const express = require('express');
 const createError = require('http-errors');
 const logger = require('morgan');
+const MongoStore = require('connect-mongo');
 const sassMiddleware = require('node-sass-middleware');
 const serveFavicon = require('serve-favicon');
-const baseRouter = require('./routes/base');
+const router = require('./routes/base');
+const User = require('./models/user');
+const expressSession = require('express-session');
 
 const app = express();
 
@@ -29,7 +32,22 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(logger('dev'));
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/', baseRouter);
+app.use(
+  expressSession({
+    secret: 'abcafsdfagfsafads',
+    saveUninitialized: false,
+    resave: false,
+    cookie: {
+      maxAge: 15 * 24 * 60 * 60 * 1000 // 15 days
+    },
+    store: MongoStore.create({
+      mongoUrl: 'mongodb://localhost:27017/lab-express-basic-auth',
+      ttl: 60 * 60 // 60 minutes before connection is refreshed
+    })
+  })
+);
+
+app.use('/', router);
 
 // Catch missing routes and forward to error handler
 app.use((req, res, next) => {
