@@ -47,6 +47,25 @@ app.use(
   })
 );
 
+const deserializeUser = (req, res, next) => {
+  const userId = req.session.userId;
+  if (userId) {
+    User.findById(userId)
+      .then((user) => {
+        req.user = user;
+        res.locals.user = user;
+        next();
+      })
+      .catch((error) => {
+        next(error);
+      });
+  } else {
+    next();
+  }
+};
+
+app.use(deserializeUser);
+
 app.use('/', router);
 
 // Catch missing routes and forward to error handler
